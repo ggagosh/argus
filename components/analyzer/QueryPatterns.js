@@ -3,6 +3,7 @@ import { AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { LoadingSpinner } from './LoadingSpinner';
 import { formatTime } from './utils';
+import ShikiHighlighter from 'react-shiki';
 
 const QueryPatterns = ({ stats }) => {
   // Safety check - if data analysis is still in progress
@@ -56,7 +57,13 @@ const QueryPatterns = ({ stats }) => {
                   <div>
                     <div className="text-sm font-semibold mb-2">Example Query:</div>
                     <pre className="bg-gray-100 p-3 rounded-md overflow-x-auto text-xs">
+                    <ShikiHighlighter
+                    language="json"
+                    theme="houston"
+                    delay={150}
+                  >
                       {JSON.stringify(pattern.examples[0].query, null, 2)}
+                    </ShikiHighlighter>
                     </pre>
                   </div>
                 )}

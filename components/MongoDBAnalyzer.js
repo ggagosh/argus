@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Upload, AlertCircle, PlayCircle } from "lucide-react";
+import { Upload, AlertCircle, PlayCircle, Trash, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import {
   Card,
@@ -26,6 +26,7 @@ import { LoadingSpinner } from "./analyzer/LoadingSpinner";
 
 // Import sample data
 import { sampleData } from "../lib/sampleData";
+import { Label } from "recharts";
 
 const MongoDBAnalyzer = () => {
   const [profileData, setProfileData] = useState([]);
@@ -719,6 +720,22 @@ const MongoDBAnalyzer = () => {
     }
   };
 
+  const handleClearData = () => {
+    setProfileData([]);
+    setStats({
+      totalOperations: 0,
+      totalDuration: 0,
+      avgDuration: 0,
+      maxDuration: 0,
+      byCollection: [],
+      byOpType: [],
+      missingIndexes: [],
+      queryPatterns: [],
+    });
+    setError(null);
+    setActiveTab("overview");
+  };
+
   return (
     <div className="space-y-8">
       {/* Welcome Section - Only show when no data */}
@@ -816,26 +833,34 @@ const MongoDBAnalyzer = () => {
               <div>
                 <CardTitle className="text-lg">Analysis Results</CardTitle>
                 <CardDescription>
-                  Showing analysis for {profileData.length.toLocaleString()}{" "}
-                  operations
+                  Showing analysis for {profileData.length.toLocaleString()} operations
                   {profileData === sampleData && " (Demo Data)"}
                 </CardDescription>
               </div>
-              <label>
+              <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" className="gap-2" asChild>
-                  <div>
+                  <label>
                     <Upload className="h-4 w-4" />
                     Upload New Data
-                  </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept=".json"
+                      onChange={handleFileUpload}
+                      disabled={isLoading}
+                    />
+                  </label>
                 </Button>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept=".json"
-                  onChange={handleFileUpload}
-                  disabled={isLoading}
-                />
-              </label>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={handleClearData}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Clear Data
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>

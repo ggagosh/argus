@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { LoadingSpinner } from './LoadingSpinner';
 import { formatTime } from './utils';
+import ShikiHighlighter from 'react-shiki';
 
 const IndexSuggestions = ({ stats }) => {
   // Safety check - if data analysis is still in progress
@@ -88,7 +89,13 @@ const IndexSuggestions = ({ stats }) => {
                 <div>
                   <div className="text-sm text-gray-500 mb-1">Query</div>
                   <pre className="bg-gray-100 p-3 rounded-md overflow-x-auto text-xs">
-                    {JSON.stringify(item.query, null, 2)}
+                  <ShikiHighlighter
+                    language="json"
+                    theme="houston"
+                    delay={150}
+                  >
+                      {JSON.stringify(item.query, null, 2)}
+                    </ShikiHighlighter>
                   </pre>
                 </div>
               </CardContent>
