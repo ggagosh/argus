@@ -45,11 +45,11 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
       ),
       suggestedIndexes: z.array(
         z.object({
-          index: z.string(), // The index query that could improve the operation's performance, code
-          message: z.string(), // The message of the suggested index, why it improves the operation's performance and how it will affect the query
+          index: z.string(),
+          message: z.string(),
         })
       ),
-      suggestedQuery: z.string(), // The suggested query for the operation
+      suggestedQuery: z.string(),
     }),
     onError: (error) => {
       console.error("Error during analysis:", error);
@@ -337,7 +337,7 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
             </TooltipTrigger>
             {!aiEnabled && !checkingAI && (
               <TooltipContent>
-                <p>AI analysis is not available. Please configure your OpenAI API key.</p>
+                <p>AI analysis is not available. Please configure your Anthropic API key.</p>
               </TooltipContent>
             )}
           </Tooltip>
