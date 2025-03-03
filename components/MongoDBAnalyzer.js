@@ -13,7 +13,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import _ from "lodash";
 import { Button } from "./ui/button";
-import { Separator } from './ui/separator';
+import { Separator } from "./ui/separator";
 
 // Import analyzer components
 import Overview from "./analyzer/Overview";
@@ -25,7 +25,7 @@ import DebugInfo from "./analyzer/DebugInfo";
 import { LoadingSpinner } from "./analyzer/LoadingSpinner";
 
 // Import sample data
-import { sampleData } from '../lib/sampleData';
+import { sampleData } from "../lib/sampleData";
 
 const MongoDBAnalyzer = () => {
   const [profileData, setProfileData] = useState([]);
@@ -353,32 +353,121 @@ const MongoDBAnalyzer = () => {
 
   // Identify operations that might benefit from indexes
   const identifyMissingIndexes = (data) => {
-    // Look for scans without indexes or with high docs examined to returned ratio
+    // Define thresholds as constants for easier configuration
+    const SLOW_QUERY_THRESHOLD_MS = 100;
+    const HIGH_SCAN_RATIO = 10;
+
+    // Helper function to safely extract query shape
+    const getQueryFilter = (op) => {
+      // Handle regular queries
+      if (op.query) return op.query;
+
+      // Handle find command
+      if (op.command && op.command.filter) return op.command.filter;
+
+      // Handle aggregation pipelines
+      if (op.command && op.command.aggregate && op.command.pipeline) {
+        // Extract $match stages from the aggregation pipeline
+        const matchStages = op.command.pipeline.filter((stage) => stage.$match);
+        if (matchStages.length > 0) {
+          // Return all match conditions merged into one object
+          return matchStages.reduce(
+            (acc, stage) => ({ ...acc, ...stage.$match }),
+            {}
+          );
+        }
+      }
+
+      // Default to empty object if no filter found
+      return {};
+    };
+
     return data
-      .filter(
-        (op) =>
-          // Include queries that:
-          (op.op === "query" || op.op === "find") && // Only look at queries
-          (op.millis > 100 || // Slow queries
-            (op.nreturned &&
-              op.docsExamined &&
-              op.docsExamined / op.nreturned > 10) || // High scan ratio
-            (op.planSummary && op.planSummary.includes("COLLSCAN"))) // Collection scans
-      )
+      .filter((op) => {
+        // Check if the operation is a query type we want to analyze
+        const isQueryOp = op.op === "query" || op.op === "find";
+        const isAggregateOp =
+          op.op === "command" && op.command && op.command.aggregate;
+
+        if (!isQueryOp && !isAggregateOp) return false;
+
+        // Check if operation meets any of our problematic criteria
+        const isSlow = op.millis > SLOW_QUERY_THRESHOLD_MS;
+        const hasHighScanRatio =
+          op.nreturned &&
+          op.docsExamined &&
+          op.docsExamined / op.nreturned > HIGH_SCAN_RATIO;
+        const usesCollectionScan =
+          op.planSummary && op.planSummary.includes("COLLSCAN");
+
+        return isSlow || hasHighScanRatio || usesCollectionScan;
+      })
       .map((op) => {
-        const fields = extractQueryFields(op.query || op.command?.filter || {});
+        const queryFilter = getQueryFilter(op);
+        const fields = extractQueryFields(queryFilter);
+        const scanRatio = op.nreturned ? op.docsExamined / op.nreturned : null;
+
+        // Return enhanced object with index recommendation
         return {
           ns: op.ns,
-          query: op.query || op.command?.filter || {},
+          query: queryFilter,
           fields,
           millis: op.millis,
           docsExamined: op.docsExamined,
           nreturned: op.nreturned,
-          scanRatio: op.nreturned ? op.docsExamined / op.nreturned : null,
+          scanRatio,
           planSummary: op.planSummary,
+          // Include a recommendation score to prioritize issues
+          recommendationScore: calculateRecommendationScore(op, scanRatio),
+          // Include suggested index based on query pattern
+          suggestedIndex: suggestIndex(op.ns, fields),
         };
       })
-      .sort((a, b) => b.millis - a.millis);
+      .sort((a, b) => b.recommendationScore - a.recommendationScore); // Sort by recommendation priority
+  };
+
+  // Helper function to calculate a recommendation score
+  const calculateRecommendationScore = (op, scanRatio) => {
+    // Prioritize based on multiple factors
+    let score = 0;
+
+    // Very slow queries get higher priority
+    if (op.millis > 1000) score += 100;
+    else if (op.millis > 500) score += 50;
+    else if (op.millis > 100) score += 20;
+
+    // High scan ratios indicate poor index usage
+    if (scanRatio > 1000) score += 50;
+    else if (scanRatio > 100) score += 30;
+    else if (scanRatio > 10) score += 10;
+
+    // Collection scans are particularly problematic for large collections
+    if (op.planSummary && op.planSummary.includes("COLLSCAN")) {
+      score += 40;
+      // If examining many documents, it's even worse
+      if (op.docsExamined > 10000) score += 30;
+    }
+
+    return score;
+  };
+
+  // Helper function to suggest an appropriate index
+  const suggestIndex = (namespace, fields) => {
+    if (!fields || fields.length === 0) return null;
+
+    // Create a basic index suggestion using the fields from the query
+    // In a real implementation, this would be more sophisticated
+    const [collection] = namespace.split(".");
+    const indexFields = fields.slice(0, 3); // Limit to first 3 fields for simplicity
+
+    return {
+      collection,
+      indexFields,
+      indexDef: `{ ${indexFields.map((f) => `"${f}": 1`).join(", ")} }`,
+      command: `db.${collection}.createIndex(${JSON.stringify(
+        Object.fromEntries(indexFields.map((f) => [f, 1]))
+      )})`,
+    };
   };
 
   // Extract fields that could be indexed from a query
@@ -433,17 +522,60 @@ const MongoDBAnalyzer = () => {
 
   // Identify common query patterns
   const identifyQueryPatterns = (data) => {
-    // Only consider find/query operations
-    const queries = data.filter(
-      (op) =>
+    // Consider find, query, and aggregation operations
+    const queries = data.filter((op) => {
+      const isRegularQuery =
         (op.op === "query" || op.op === "find") &&
-        (op.query || op.command?.filter)
-    );
+        (op.query || op.command?.filter);
+
+      const isAggregation =
+        op.op === "command" &&
+        op.command?.aggregate &&
+        Array.isArray(op.command.pipeline);
+
+      return isRegularQuery || isAggregation;
+    });
+
+    // Extract query pattern from each operation
+    const queriesWithPatterns = queries.map((op) => {
+      let queryObj;
+      let queryType = "find";
+
+      if (op.query) {
+        queryObj = op.query;
+      } else if (op.command?.filter) {
+        queryObj = op.command.filter;
+      } else if (op.command?.aggregate && Array.isArray(op.command.pipeline)) {
+        queryType = "aggregate";
+        // Extract match conditions from aggregation pipeline
+        const matchStages = op.command.pipeline.filter((stage) => stage.$match);
+        if (matchStages.length > 0) {
+          queryObj = matchStages.reduce(
+            (acc, stage) => ({ ...acc, ...stage.$match }),
+            {}
+          );
+        } else {
+          // For aggregations without match stages, create a pattern based on pipeline structure
+          queryObj = {
+            pipelineStructure: op.command.pipeline.map(
+              (stage) => Object.keys(stage)[0] || "unknown"
+            ),
+          };
+        }
+      } else {
+        queryObj = {};
+      }
+
+      return {
+        ...op,
+        patternKey: generateQueryPatternKey(queryObj),
+        queryType,
+        extractedQuery: queryObj,
+      };
+    });
 
     // Group by pattern
-    const patternGroups = _.groupBy(queries, (op) => {
-      return generateQueryPatternKey(op.query || op.command?.filter || {});
-    });
+    const patternGroups = _.groupBy(queriesWithPatterns, "patternKey");
 
     // Format results
     return Object.entries(patternGroups)
@@ -452,16 +584,42 @@ const MongoDBAnalyzer = () => {
           (sum, op) => sum + (op.millis || 0),
           0
         );
+
+        // Get the most common namespace for this pattern
+        const nsCounts = _.countBy(operations, "ns");
+        const topNamespaces = Object.entries(nsCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([ns, count]) => ({
+            ns,
+            count,
+            percentage: Math.round((count / operations.length) * 100),
+          }));
+
+        // Get example operations, prioritizing slower ones
+        const examples = operations
+          .sort((a, b) => b.millis - a.millis)
+          .slice(0, 3)
+          .map((op) => ({
+            ns: op.ns,
+            query: op.extractedQuery,
+            queryType: op.queryType,
+            millis: op.millis,
+            planSummary: op.planSummary,
+          }));
+
         return {
           pattern,
           count: operations.length,
           totalTime,
-          avgTime: totalTime / operations.length,
-          examples: operations.slice(0, 3).map((op) => ({
-            ns: op.ns,
-            query: op.query || op.command?.filter || {},
-            millis: op.millis,
-          })),
+          avgTime: Math.round(totalTime / operations.length),
+          maxTime: Math.max(...operations.map((op) => op.millis || 0)),
+          namespaces: topNamespaces,
+          queryTypes: _.countBy(operations, "queryType"),
+          hasCollectionScans: operations.some(
+            (op) => op.planSummary && op.planSummary.includes("COLLSCAN")
+          ),
+          examples,
         };
       })
       .sort((a, b) => b.totalTime - a.totalTime)
@@ -470,13 +628,22 @@ const MongoDBAnalyzer = () => {
 
   // Generate a simplified key that represents the query pattern
   const generateQueryPatternKey = (query) => {
-    const simplifyQueryObject = (obj) => {
+    const simplifyQueryObject = (obj, depth = 0) => {
+      // Prevent infinite recursion on circular references
+      if (depth > 10) return "...";
+
       if (!obj || typeof obj !== "object") return "?";
 
-      // Handle arrays (for $and, $or, etc.)
+      // Handle arrays (for $and, $or, etc. or for aggregation pipeline stages)
       if (Array.isArray(obj)) {
+        // Special case for pipeline structure in aggregations
+        if (obj.every((item) => typeof item === "string")) {
+          return "[" + obj.join(",") + "]";
+        }
         return (
-          "[" + obj.map((item) => simplifyQueryObject(item)).join(",") + "]"
+          "[" +
+          obj.map((item) => simplifyQueryObject(item, depth + 1)).join(",") +
+          "]"
         );
       }
 
@@ -488,7 +655,14 @@ const MongoDBAnalyzer = () => {
 
         // Handle special operators
         if (key === "$and" || key === "$or" || key === "$nor") {
-          simplified[key] = simplifyQueryObject(value);
+          simplified[key] = simplifyQueryObject(value, depth + 1);
+        }
+        // Handle MongoDB dot notation fields (preserve the full path)
+        else if (key.includes(".")) {
+          simplified[key] =
+            typeof value === "object" && value !== null
+              ? simplifyQueryObject(value, depth + 1)
+              : "?";
         }
         // Handle regular fields
         else if (typeof value === "object" && value !== null) {
@@ -498,6 +672,7 @@ const MongoDBAnalyzer = () => {
           );
 
           if (hasOperators) {
+            // Preserve just the operator names, not their values
             simplified[key] =
               "{" +
               Object.keys(value)
@@ -506,7 +681,7 @@ const MongoDBAnalyzer = () => {
                 .join(",") +
               "}";
           } else {
-            simplified[key] = simplifyQueryObject(value);
+            simplified[key] = simplifyQueryObject(value, depth + 1);
           }
         } else {
           simplified[key] = "?";
@@ -530,16 +705,16 @@ const MongoDBAnalyzer = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Process the sample data
       const analysisResults = processData(sampleData);
       setProfileData(sampleData);
       setStats(analysisResults);
-      
+
       setIsLoading(false);
     } catch (err) {
       console.error("Error loading sample data:", err);
-      setError('Failed to load sample data. Please try again.');
+      setError("Failed to load sample data. Please try again.");
       setIsLoading(false);
     }
   };
@@ -558,7 +733,11 @@ const MongoDBAnalyzer = () => {
             suggestions.
           </p>
           <div className="flex items-center gap-4">
-            <Button onClick={loadSampleData} variant="secondary" className="gap-2">
+            <Button
+              onClick={loadSampleData}
+              variant="secondary"
+              className="gap-2"
+            >
               <PlayCircle className="h-4 w-4" />
               Try Demo
             </Button>
@@ -621,7 +800,9 @@ const MongoDBAnalyzer = () => {
           <CardContent className="flex items-center justify-center py-8">
             <LoadingSpinner />
             <span className="ml-2 text-sm text-muted-foreground">
-              {profileData.length ? 'Analyzing profile data...' : 'Loading sample data...'}
+              {profileData.length
+                ? "Analyzing profile data..."
+                : "Loading sample data..."}
             </span>
           </CardContent>
         </Card>
@@ -635,8 +816,9 @@ const MongoDBAnalyzer = () => {
               <div>
                 <CardTitle className="text-lg">Analysis Results</CardTitle>
                 <CardDescription>
-                  Showing analysis for {profileData.length.toLocaleString()} operations
-                  {profileData === sampleData && ' (Demo Data)'}
+                  Showing analysis for {profileData.length.toLocaleString()}{" "}
+                  operations
+                  {profileData === sampleData && " (Demo Data)"}
                 </CardDescription>
               </div>
               <label>
