@@ -1,0 +1,13 @@
+<svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer circle -->
+  <circle cx="150" cy="150" r="100" fill="none" stroke="currentColor" stroke-width="4"/>
+  <!-- Eyes arranged around the circle -->
+  <circle cx="150" cy="50" r="8" fill="currentColor"/>
+  <circle cx="220" cy="90" r="8" fill="currentColor"/>
+  <circle cx="250" cy="150" r="8" fill="currentColor"/>
+  <circle cx="220" cy="210" r="8" fill="currentColor"/>
+  <circle cx="150" cy="250" r="8" fill="currentColor"/>
+  <circle cx="80" cy="210" r="8" fill="currentColor"/>
+  <circle cx="50" cy="150" r="8" fill="currentColor"/>
+  <circle cx="80" cy="90" r="8" fill="currentColor"/>
+</svg> 
