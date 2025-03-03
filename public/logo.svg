@@ -1,13 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
   <!-- Outer circle -->
   <circle cx="150" cy="150" r="100" fill="none" stroke="currentColor" stroke-width="4"/>
-  <!-- Eyes arranged around the circle -->
-  <circle cx="150" cy="50" r="8" fill="currentColor"/>
-  <circle cx="220" cy="90" r="8" fill="currentColor"/>
-  <circle cx="250" cy="150" r="8" fill="currentColor"/>
-  <circle cx="220" cy="210" r="8" fill="currentColor"/>
-  <circle cx="150" cy="250" r="8" fill="currentColor"/>
-  <circle cx="80" cy="210" r="8" fill="currentColor"/>
-  <circle cx="50" cy="150" r="8" fill="currentColor"/>
-  <circle cx="80" cy="90" r="8" fill="currentColor"/>
+  <!-- Eyes arranged around the circle with different colors -->
+  <circle cx="150" cy="50" r="8" fill="#3B82F6"/>  <!-- Blue -->
+  <circle cx="220" cy="90" r="8" fill="#10B981"/>  <!-- Green -->
+  <circle cx="250" cy="150" r="8" fill="#6366F1"/> <!-- Indigo -->
+  <circle cx="220" cy="210" r="8" fill="#EC4899"/>  <!-- Pink -->
+  <circle cx="150" cy="250" r="8" fill="#F59E0B"/> <!-- Amber -->
+  <circle cx="80" cy="210" r="8" fill="#8B5CF6"/>  <!-- Purple -->
+  <circle cx="50" cy="150" r="8" fill="#EF4444"/>  <!-- Red -->
+  <circle cx="80" cy="90" r="8" fill="#14B8A6"/>   <!-- Teal -->
 </svg> 
