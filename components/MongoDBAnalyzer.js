@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from "./ui/card";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import _ from "lodash";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 
@@ -27,6 +26,97 @@ import { LoadingSpinner } from "./analyzer/LoadingSpinner";
 // Import sample data
 import { sampleData } from "../lib/sampleData";
 import { Label } from "recharts";
+
+function analyzeAndCutLargeInArrays(data, maxArrayLength = 10) {
+  const MAX_IN_ARRAY_LENGTH = maxArrayLength;
+
+  const ARRAY_OPERATORS = ["$in", "$nin", "$all"];
+
+  if (!data || !Array.isArray(data)) {
+    throw new Error("Input must be an array of MongoDB query log objects");
+  }
+
+  try {
+    const dataCopy = structuredClone(data);
+
+    let maxLength = 0;
+
+    dataCopy.forEach((queryLog) => {
+      if (
+        queryLog?.command?.pipeline &&
+        Array.isArray(queryLog.command.pipeline)
+      ) {
+        queryLog.command.pipeline.forEach((stage) => {
+          if (stage && stage.$match) {
+            maxLength = Math.max(
+              maxLength,
+              processObject(stage.$match, MAX_IN_ARRAY_LENGTH)
+            );
+          }
+        });
+      }
+
+      if (queryLog?.query && typeof queryLog.query === "object") {
+        maxLength = Math.max(
+          maxLength,
+          processObject(queryLog.query, MAX_IN_ARRAY_LENGTH)
+        );
+      }
+
+      if (
+        queryLog?.command?.filter &&
+        typeof queryLog.command.filter === "object"
+      ) {
+        maxLength = Math.max(
+          maxLength,
+          processObject(queryLog.command.filter, MAX_IN_ARRAY_LENGTH)
+        );
+      }
+    });
+
+    function processObject(obj, maxLength) {
+      let localMaxLength = 0;
+
+      if (!obj || typeof obj !== "object") {
+        return localMaxLength;
+      }
+
+      for (const key in obj) {
+        const value = obj[key];
+
+        if (value && typeof value === "object") {
+          if (["$and", "$or", "$nor"].includes(key) && Array.isArray(value)) {
+            value.forEach((condition) => {
+              localMaxLength = Math.max(
+                localMaxLength,
+                processObject(condition, maxLength)
+              );
+            });
+          } else if (ARRAY_OPERATORS.includes(key) && Array.isArray(value)) {
+            localMaxLength = Math.max(localMaxLength, value.length);
+
+            if (value.length > maxLength) {
+              obj[key] = value.slice(0, maxLength);
+            }
+          } else {
+            localMaxLength = Math.max(
+              localMaxLength,
+              processObject(value, maxLength)
+            );
+          }
+        }
+      }
+
+      return localMaxLength;
+    }
+
+    return dataCopy;
+  } catch (error) {
+    console.error("Error processing query logs:", error);
+
+    throw error;
+  }
+}
 
 const MongoDBAnalyzer = () => {
   const [profileData, setProfileData] = useState([]);
@@ -44,7 +134,6 @@ const MongoDBAnalyzer = () => {
     queryPatterns: [],
   });
 
-  // Monitor state changes for debugging
   useEffect(() => {
     console.log("Profile data updated, length:", profileData.length);
   }, [profileData]);
@@ -125,6 +214,9 @@ const MongoDBAnalyzer = () => {
           setIsLoading(false);
           return;
         }
+
+        // Analyze and cut large arrays in arrays
+        data = analyzeAndCutLargeInArrays(data);
 
         // First set the raw data
         setProfileData(data);
@@ -576,7 +668,14 @@ const MongoDBAnalyzer = () => {
     });
 
     // Group by pattern
-    const patternGroups = _.groupBy(queriesWithPatterns, "patternKey");
+    const patternGroups = queriesWithPatterns.reduce((groups, query) => {
+      const key = query.patternKey;
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(query);
+      return groups;
+    }, {});
 
     // Format results
     return Object.entries(patternGroups)
@@ -587,7 +686,10 @@ const MongoDBAnalyzer = () => {
         );
 
         // Get the most common namespace for this pattern
-        const nsCounts = _.countBy(operations, "ns");
+        const nsCounts = operations.reduce((acc, op) => {
+          acc[op.ns] = (acc[op.ns] || 0) + 1;
+          return acc;
+        }, {});
         const topNamespaces = Object.entries(nsCounts)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 3)
@@ -616,7 +718,10 @@ const MongoDBAnalyzer = () => {
           avgTime: Math.round(totalTime / operations.length),
           maxTime: Math.max(...operations.map((op) => op.millis || 0)),
           namespaces: topNamespaces,
-          queryTypes: _.countBy(operations, "queryType"),
+          queryTypes: operations.reduce((acc, op) => {
+            acc[op.queryType] = (acc[op.queryType] || 0) + 1;
+            return acc;
+          }, {}),
           hasCollectionScans: operations.some(
             (op) => op.planSummary && op.planSummary.includes("COLLSCAN")
           ),
@@ -833,7 +938,8 @@ const MongoDBAnalyzer = () => {
               <div>
                 <CardTitle className="text-lg">Analysis Results</CardTitle>
                 <CardDescription>
-                  Showing analysis for {profileData.length.toLocaleString()} operations
+                  Showing analysis for {profileData.length.toLocaleString()}{" "}
+                  operations
                   {profileData === sampleData && " (Demo Data)"}
                 </CardDescription>
               </div>
@@ -851,9 +957,9 @@ const MongoDBAnalyzer = () => {
                     />
                   </label>
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="gap-2"
                   onClick={handleClearData}
                 >
