@@ -4,6 +4,7 @@ import { Geist } from "next/font/google";
 import { Github } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { Footer } from "@/components/ui/footer";
 
 const geist = Geist({ subsets: ["latin"] });
 
@@ -55,25 +56,7 @@ export default function Home() {
         <MongoDBAnalyzer />
       </main>
 
-      <footer className="mt-auto border-t py-6 md:py-0">
-        <div className="container flex flex-col items-center justify-between gap-4 md:h-14 md:flex-row max-w-6xl mx-auto px-4">
-          <p className="text-sm text-muted-foreground">
-            Created with ❤️ by {" "}
-            <Link
-              href="https://cursor.sh"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              Cursor
-            </Link>{" "}
-            without any knowledge of React or Next.js
-          </p>
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Argus
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
