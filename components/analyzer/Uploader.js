@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 
 const Uploader = ({ onFileUpload, onUseSampleData }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-10 flex flex-col items-center justify-center text-center">
+    <div className="bg-white rounded-lg shadow-xs p-10 flex flex-col items-center justify-center text-center">
       <UploadCloud className="w-16 h-16 text-blue-500 mb-4" />
       <h2 className="text-2xl font-semibold mb-2">Upload MongoDB Profile Data</h2>
       <p className="text-gray-500 mb-6 max-w-md">

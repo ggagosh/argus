@@ -75,13 +75,13 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
             {selectedOperation.docsExamined /
               Math.max(1, selectedOperation.nreturned) >
             10 ? (
-              <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
             ) : selectedOperation.docsExamined /
                 Math.max(1, selectedOperation.nreturned) >
               3 ? (
-              <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
             ) : (
-              <Info className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <Info className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
             )}
             <div>
               <h4 className="text-sm font-medium">
@@ -111,9 +111,9 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
       {selectedOperation.planSummary && (
         <div className="flex items-start gap-2">
           {selectedOperation.planSummary.includes("COLLSCAN") ? (
-            <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+            <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
           ) : (
-            <Info className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <Info className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
           )}
           <div>
             <h4 className="text-sm font-medium">Query Execution Plan</h4>
@@ -131,11 +131,11 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
       {/* Duration Analysis */}
       <div className="flex items-start gap-2">
         {selectedOperation.millis > 100 ? (
-          <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+          <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
         ) : selectedOperation.millis > 50 ? (
-          <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
         ) : (
-          <Info className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+          <Info className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
         )}
         <div>
           <h4 className="text-sm font-medium">
@@ -229,11 +229,11 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
         return (
           <div key={index} className="flex items-start gap-2">
             {analysis.type === "danger" ? (
-              <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
             ) : analysis.type === "warning" ? (
-              <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
             ) : (
-              <Info className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <Info className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
             )}
             <div>
               <h4 className="text-sm font-medium">Performance {analysis.type === "danger" ? "Issue" : analysis.type === "warning" ? "Warning" : "Info"}</h4>
