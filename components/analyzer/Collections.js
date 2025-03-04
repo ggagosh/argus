@@ -3,6 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { LoadingSpinner } from './LoadingSpinner';
 import { formatTime } from './utils';
 
+// Green Pea color palette (only used for progress bars)
+const greenPea = {
+  50: '#ebfef5',
+  500: '#05c484',
+};
+
 const Collections = ({ stats }) => {
   // Safety check - if collections data isn't populated, show loading indicator
   if (!stats || stats.byCollection?.length === 0) {
@@ -47,9 +53,9 @@ const Collections = ({ stats }) => {
                 </div>
               </div>
               
-              <div className="h-10 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-10 bg-[#ebfef5] rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-blue-500" 
+                  className="h-full bg-[#05c484] transition-all duration-300" 
                   style={{ 
                     width: `${Math.min(100, (collection.totalTime / stats.totalDuration) * 100)}%` 
                   }}
