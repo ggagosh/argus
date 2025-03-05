@@ -17,7 +17,6 @@ import {
 import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
 import PerformanceAnalysis from "./PerformanceAnalysis";
-import MetricsGlossary from "./MetricsGlossary";
 import ShikiHighlighter from "react-shiki";
 
 const OperationDetails = ({
@@ -246,11 +245,6 @@ const OperationDetails = ({
           </div>
         </CardContent>
       </Card>
-
-      {/* MongoDB Performance Metrics Glossary */}
-      <div className="mt-4">
-        <MetricsGlossary />
-      </div>
     </div>
   );
 };
