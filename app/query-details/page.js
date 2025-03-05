@@ -9,7 +9,12 @@ import {
   AlertCircle, 
   ArrowLeft,
   Github,
-  Info
+  Info,
+  Clock,
+  Search,
+  FileText,
+  ScanLine,
+  Database
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -181,35 +186,50 @@ function QueryDetailsContent() {
               <CardContent className="px-4 pb-4 pt-0 text-sm">
                 <div className="space-y-3">
                   <div>
-                    <h4 className="font-medium">Query Duration</h4>
+                    <h4 className="font-medium flex items-center gap-1.5">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      Query Duration
+                    </h4>
                     <p className="text-muted-foreground text-xs">
                       The total time taken to execute the query. Values above 100ms are generally considered slow.
                     </p>
                   </div>
                   
                   <div>
-                    <h4 className="font-medium">Documents Examined</h4>
+                    <h4 className="font-medium flex items-center gap-1.5">
+                      <Search className="h-4 w-4 text-muted-foreground" />
+                      Documents Examined
+                    </h4>
                     <p className="text-muted-foreground text-xs">
                       Number of documents MongoDB had to inspect to fulfill the query. Lower numbers indicate better index usage.
                     </p>
                   </div>
                   
                   <div>
-                    <h4 className="font-medium">Documents Returned</h4>
+                    <h4 className="font-medium flex items-center gap-1.5">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      Documents Returned
+                    </h4>
                     <p className="text-muted-foreground text-xs">
                       The total number of documents returned by the query.
                     </p>
                   </div>
                   
                   <div>
-                    <h4 className="font-medium">Scan Ratio</h4>
+                    <h4 className="font-medium flex items-center gap-1.5">
+                      <ScanLine className="h-4 w-4 text-muted-foreground" />
+                      Scan Ratio
+                    </h4>
                     <p className="text-muted-foreground text-xs">
                       Documents examined divided by documents returned. Lower ratios indicate more efficient queries. Values over 10 suggest optimization opportunities.
                     </p>
                   </div>
                   
                   <div>
-                    <h4 className="font-medium">Index Usage</h4>
+                    <h4 className="font-medium flex items-center gap-1.5">
+                      <Database className="h-4 w-4 text-muted-foreground" />
+                      Index Usage
+                    </h4>
                     <p className="text-muted-foreground text-xs">
                       Indicates whether the query used an index. Collection scans (COLLSCAN) mean no suitable index was found and generally perform poorly on large collections.
                     </p>

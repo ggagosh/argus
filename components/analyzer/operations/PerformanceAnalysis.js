@@ -3,8 +3,13 @@ import { Info, AlertCircle, Brain, Loader2 } from "lucide-react";
 import { Button } from "../../ui/button";
 import { experimental_useObject as useObject } from "@ai-sdk/react";
 import { z } from "zod";
-import ShikiHighlighter from "react-shiki";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../ui/tooltip";
+import { ThemeAwareShikiHighlighter } from "../../ui/shiki-highlighter";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../../ui/tooltip";
 
 const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
   const [showAIAnalysis, setShowAIAnalysis] = useState(false);
@@ -14,11 +19,11 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
   useEffect(() => {
     const checkAIStatus = async () => {
       try {
-        const response = await fetch('/api/check-ai-status');
+        const response = await fetch("/api/check-ai-status");
         const data = await response.json();
         setAIEnabled(data.enabled);
       } catch (error) {
-        console.error('Failed to check AI status:', error);
+        console.error("Failed to check AI status:", error);
         setAIEnabled(false);
       } finally {
         setCheckingAI(false);
@@ -225,7 +230,7 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
       {/* Performance Analysis Items */}
       {aiAnalysis?.performanceAnalysis?.map((analysis, index) => {
         if (!analysis?.type || !analysis?.message) return null;
-        
+
         return (
           <div key={index} className="flex items-start gap-2">
             {analysis.type === "danger" ? (
@@ -236,22 +241,31 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
               <Info className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
             )}
             <div>
-              <h4 className="text-sm font-medium">Performance {analysis.type === "danger" ? "Issue" : analysis.type === "warning" ? "Warning" : "Info"}</h4>
-              <p className="text-xs text-muted-foreground">{analysis.message}</p>
+              <h4 className="text-sm font-medium">
+                Performance{" "}
+                {analysis.type === "danger"
+                  ? "Issue"
+                  : analysis.type === "warning"
+                  ? "Warning"
+                  : "Info"}
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                {analysis.message}
+              </p>
             </div>
           </div>
         );
       })}
 
       {/* Overall Assessment for good performance */}
-      {aiAnalysis?.performanceAnalysis?.length > 0 && 
-       aiAnalysis.performanceAnalysis.every((a) => a?.type === "info") && (
-        <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900 rounded text-green-800 dark:text-green-400 text-xs">
-          <p className="font-medium">
-            ✓ This query is performing well according to AI analysis.
-          </p>
-        </div>
-      )}
+      {aiAnalysis?.performanceAnalysis?.length > 0 &&
+        aiAnalysis.performanceAnalysis.every((a) => a?.type === "info") && (
+          <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900 rounded text-green-800 dark:text-green-400 text-xs">
+            <p className="font-medium">
+              ✓ This query is performing well according to AI analysis.
+            </p>
+          </div>
+        )}
 
       {/* Suggested Improvements Section */}
       {(aiAnalysis?.suggestedIndexes?.length > 0 ||
@@ -263,15 +277,13 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
           <ul className="text-xs space-y-3 list-disc pl-4">
             {aiAnalysis?.suggestedIndexes?.map((index, i) => (
               <li key={i}>
-                <div className="text-muted-foreground mb-1">{index.message}</div>
+                <div className="text-muted-foreground mb-1">
+                  {index.message}
+                </div>
                 <div className="relative">
-                  <ShikiHighlighter
-                    language="javascript"
-                    theme="houston"
-                    delay={150}
-                  >
+                  <ThemeAwareShikiHighlighter language="javascript" delay={150}>
                     {index.index}
-                  </ShikiHighlighter>
+                  </ThemeAwareShikiHighlighter>
                 </div>
               </li>
             ))}
@@ -279,13 +291,9 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
               <li>
                 <div>Optimize query structure:</div>
                 <div className="mt-1 relative">
-                  <ShikiHighlighter
-                    language="javascript"
-                    theme="houston"
-                    delay={150}
-                  >
+                  <ThemeAwareShikiHighlighter language="javascript" delay={150}>
                     {aiAnalysis.suggestedQuery}
-                  </ShikiHighlighter>
+                  </ThemeAwareShikiHighlighter>
                 </div>
               </li>
             )}
@@ -337,7 +345,10 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
             </TooltipTrigger>
             {!aiEnabled && !checkingAI && (
               <TooltipContent>
-                <p>AI analysis is not available. Please configure your Anthropic API key.</p>
+                <p>
+                  AI analysis is not available. Please configure your Anthropic
+                  API key.
+                </p>
               </TooltipContent>
             )}
           </Tooltip>

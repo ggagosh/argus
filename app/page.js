@@ -239,7 +239,7 @@ export default function Home() {
                           <span>3.</span>
                           <span>Export profiler data using</span>
                         </li>
-                        <code className="bg-gray-100 px-2 py-0.5 rounded ml-4 mt-0.5 mb-1.5 block text-xs">
+                        <code className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-0.5 rounded ml-4 mt-0.5 mb-1.5 block text-xs">
                           db.system.profile.find()
                         </code>
                         <li className="flex gap-2 text-gray-600 text-sm">
@@ -279,8 +279,6 @@ export default function Home() {
           </div>
         </section>
       </main>
-
-      <Footer />
     </div>
   );
 }

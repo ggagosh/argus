@@ -17,7 +17,7 @@ import {
 import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
 import PerformanceAnalysis from "./PerformanceAnalysis";
-import ShikiHighlighter from "react-shiki";
+import { ThemeAwareShikiHighlighter } from "../../ui/shiki-highlighter";
 
 const OperationDetails = ({
   selectedOperation,
@@ -200,9 +200,8 @@ const OperationDetails = ({
                   {selectedOperation.query ? "Query" : "Command"}
                 </h3>
                 <div className="relative">
-                  <ShikiHighlighter
+                  <ThemeAwareShikiHighlighter
                     language="json"
-                    theme="houston"
                     delay={150}
                   >
                     {JSON.stringify(
@@ -210,7 +209,7 @@ const OperationDetails = ({
                       null,
                       2
                     )}
-                  </ShikiHighlighter>
+                  </ThemeAwareShikiHighlighter>
                 </div>
               </div>
             )}
@@ -232,13 +231,12 @@ const OperationDetails = ({
                 className="hidden mt-2"
               >
                 <div className="relative">
-                  <ShikiHighlighter
+                  <ThemeAwareShikiHighlighter
                     language="json"
-                    theme="houston"
                     delay={150}
                   >
                     {JSON.stringify(selectedOperation, null, 2)}
-                  </ShikiHighlighter>
+                  </ThemeAwareShikiHighlighter>
                 </div>
               </div>
             </div>
