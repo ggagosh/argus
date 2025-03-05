@@ -3,6 +3,7 @@ import { UploadCloud, CheckCircle, AlertCircle, FileJson } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 import { Alert, AlertDescription } from '../ui/alert';
+import { analyzeAndCutLargeInArrays } from '../../lib/utils';
 
 const Uploader = ({ onFileUpload }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -53,7 +54,8 @@ const Uploader = ({ onFileUpload }) => {
       setValidationProgress(40);
       
       // Parse JSON
-      const jsonData = JSON.parse(fileContent);
+      let jsonData = JSON.parse(fileContent);
+      jsonData = analyzeAndCutLargeInArrays(jsonData);
       setValidationProgress(60);
       
       // Validate it's an array

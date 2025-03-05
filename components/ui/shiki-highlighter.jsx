@@ -6,7 +6,7 @@ import ShikiHighlighter from 'react-shiki';
 
 const themes = {
   light: 'github-light',
-  dark: 'github-dark'
+  dark: 'aurora-x'
 };
 
 export function ThemeAwareShikiHighlighter({ children, language, ...props }) {
