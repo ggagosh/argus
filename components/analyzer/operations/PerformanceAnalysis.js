@@ -148,7 +148,7 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
           </h4>
           <p className="text-xs text-muted-foreground">
             {selectedOperation.millis > 100
-              ? `Slow operation: This query took longer than 100ms to execute, which could impact application performance, especially under load.`
+              ? "Slow operation: This query took longer than 100ms to execute, which could impact application performance, especially under load."
               : selectedOperation.millis > 50
               ? `Moderate duration: This query completed in ${formatTime(
                   selectedOperation.millis
@@ -176,8 +176,7 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
         )}
 
       {/* Improvement Suggestions */}
-      {(selectedOperation.planSummary &&
-        selectedOperation.planSummary.includes("COLLSCAN")) ||
+      {(selectedOperation.planSummary?.includes("COLLSCAN")) ||
       selectedOperation.docsExamined /
         Math.max(1, selectedOperation.nreturned) >
         10 ||
@@ -187,8 +186,7 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
             Suggestions for Improvement:
           </h4>
           <ul className="text-xs space-y-1 list-disc pl-4">
-            {selectedOperation.planSummary &&
-              selectedOperation.planSummary.includes("COLLSCAN") && (
+            {selectedOperation.planSummary?.includes("COLLSCAN") && (
                 <li>
                   Create an index on the fields used in the query filter to
                   avoid full collection scans
@@ -208,8 +206,7 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
                 improve execution time
               </li>
             )}
-            {selectedOperation.planSummary &&
-              selectedOperation.planSummary.includes("SORT") && (
+            {selectedOperation.planSummary?.includes("SORT") && (
                 <li>
                   Add an index with the appropriate sort order to avoid
                   in-memory sorting
@@ -232,7 +229,7 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
         if (!analysis?.type || !analysis?.message) return null;
 
         return (
-          <div key={index} className="flex items-start gap-2">
+          <div key={`analysis-${analysis.type}-${index}`} className="flex items-start gap-2">
             {analysis.type === "danger" ? (
               <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
             ) : analysis.type === "warning" ? (
@@ -275,14 +272,14 @@ const PerformanceAnalysis = ({ selectedOperation, formatTime }) => {
             Suggestions for Improvement:
           </h4>
           <ul className="text-xs space-y-3 list-disc pl-4">
-            {aiAnalysis?.suggestedIndexes?.map((index, i) => (
-              <li key={i}>
+            {aiAnalysis?.suggestedIndexes?.map((indexItem, i) => (
+              <li key={`index-suggestion-${indexItem.index.substring(0, 20)}-${i}`}>
                 <div className="text-muted-foreground mb-1">
-                  {index.message}
+                  {indexItem.message}
                 </div>
                 <div className="relative">
                   <ThemeAwareShikiHighlighter language="javascript" delay={150}>
-                    {index.index}
+                    {indexItem.index}
                   </ThemeAwareShikiHighlighter>
                 </div>
               </li>

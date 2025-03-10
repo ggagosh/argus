@@ -8,13 +8,6 @@ import { HelpCircle, ArrowRight, Github, Upload, Database } from "lucide-react";
 import Uploader from "@/components/analyzer/Uploader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Footer } from "@/components/ui/footer";
 import { Header } from '@/components/ui/header';
 
 export default function Home() {

@@ -4,14 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { 
-  ChevronRight, 
-  AlertCircle, 
-  ClockIcon, 
-  Database, 
-  Filter, 
-  Search, 
-  ArrowUpDown, 
+import {
+  ChevronRight,
+  AlertCircle,
+  ClockIcon,
+  Database,
+  Filter,
+  Search,
+  ArrowUpDown,
   ExternalLink,
   Github
 } from 'lucide-react';
@@ -23,14 +23,14 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Table, 
-  TableBody, 
-  TableCaption, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
 import { Header } from '@/components/ui/header';
 
@@ -53,7 +53,7 @@ export default function DashboardPage() {
   const [profileData, setProfileData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Filter state
   const [filters, setFilters] = useState({
     collection: null,
@@ -61,13 +61,13 @@ export default function DashboardPage() {
     searchText: '',
     timeRange: 'all'
   });
-  
+
   // Sort state
   const [sortConfig, setSortConfig] = useState({
     key: 'millis',
     direction: 'desc'
   });
-  
+
   // Metrics state
   const [metrics, setMetrics] = useState({
     totalQueries: 0,
@@ -78,37 +78,40 @@ export default function DashboardPage() {
     totalDatabases: 0,
     timeRange: { start: null, end: null }
   });
-  
+
+  // Display limit state
+  const [displayLimit, setDisplayLimit] = useState(25);
+
   // Process data
   useEffect(() => {
     const loadData = () => {
       try {
         setIsLoading(true);
-        
+
         // Try to load data from localStorage
         const storedData = localStorage.getItem('mongoProfileData');
-        
+
         if (!storedData) {
           setError('No MongoDB profile data found. Please upload a file first.');
           setIsLoading(false);
           return;
         }
-        
+
         const data = JSON.parse(storedData);
-        
+
         if (!Array.isArray(data) || data.length === 0) {
           setError('Invalid or empty MongoDB profile data.');
           setIsLoading(false);
           return;
         }
-        
+
         // Process the data
         const processedData = processData(data);
         setProfileData(processedData);
-        
+
         // Calculate metrics
         calculateMetrics(processedData);
-        
+
         setIsLoading(false);
       } catch (err) {
         console.error('Error loading data:', err);
@@ -116,18 +119,18 @@ export default function DashboardPage() {
         setIsLoading(false);
       }
     };
-    
+
     loadData();
   }, []);
-  
+
   const processData = (data) => {
     // Process and prepare the data for analysis
     // This is a simplified version; the actual implementation would be more complex
     return data.map(entry => {
       // Extract namespace parts
-      let ns = entry.ns || '';
+      const ns = entry.ns || '';
       const [database, collection] = ns.split('.');
-      
+
       return {
         ...entry,
         database,
@@ -141,7 +144,7 @@ export default function DashboardPage() {
       };
     });
   };
-  
+
   const getQueryType = (entry) => {
     if (entry.op) return entry.op;
     if (entry.command?.find) return 'find';
@@ -151,55 +154,55 @@ export default function DashboardPage() {
     if (entry.command?.delete) return 'delete';
     return 'unknown';
   };
-  
+
   const formatQueryForDisplay = (entry) => {
     if (entry.query) return JSON.stringify(entry.query, null, 2);
     if (entry.command) return JSON.stringify(entry.command, null, 2);
     return JSON.stringify(entry, null, 2);
   };
-  
+
   const calculateMetrics = (data) => {
     if (!data || data.length === 0) return;
-    
+
     // Calculate total queries
     const totalQueries = data.length;
-    
+
     // Calculate average duration
     const totalDuration = data.reduce((sum, query) => sum + (query.millis || 0), 0);
     const avgDuration = totalDuration / totalQueries;
-    
+
     // Find max duration and slowest query
     let maxDuration = 0;
     let slowestQuery = null;
-    
-    data.forEach(query => {
+
+    for (const query of data) {
       if ((query.millis || 0) > maxDuration) {
         maxDuration = query.millis || 0;
         slowestQuery = query;
       }
-    });
-    
+    }
+
     // Count unique collections and databases
     const collections = new Set();
     const databases = new Set();
-    
-    data.forEach(query => {
+
+    for (const query of data) {
       if (query.collection) collections.add(query.collection);
       if (query.database) databases.add(query.database);
-    });
-    
+    }
+
     // Determine time range
     let startTime = new Date().getTime();
     let endTime = 0;
-    
-    data.forEach(query => {
+
+    for (const query of data) {
       const timestamp = query.ts ? new Date(query.ts.$date).getTime() : 0;
       if (timestamp > 0) {
         startTime = Math.min(startTime, timestamp);
         endTime = Math.max(endTime, timestamp);
       }
-    });
-    
+    }
+
     setMetrics({
       totalQueries,
       avgDuration,
@@ -207,51 +210,51 @@ export default function DashboardPage() {
       slowestQuery,
       totalCollections: collections.size,
       totalDatabases: databases.size,
-      timeRange: { 
-        start: startTime !== new Date().getTime() ? new Date(startTime) : null, 
-        end: endTime > 0 ? new Date(endTime) : null 
+      timeRange: {
+        start: startTime !== new Date().getTime() ? new Date(startTime) : null,
+        end: endTime > 0 ? new Date(endTime) : null
       }
     });
   };
-  
+
   const handleFilterChange = (key, value) => {
     // Toggle logic - if clicking the same value, clear it
     const newValue = filters[key] === value ? null : value;
-    
+
     setFilters(prevFilters => ({
       ...prevFilters,
       [key]: newValue
     }));
   };
-  
+
   const handleSort = (key) => {
     setSortConfig(prevConfig => ({
       key,
-      direction: 
-        prevConfig.key === key 
+      direction:
+        prevConfig.key === key
           ? prevConfig.direction === 'asc' ? 'desc' : 'asc'
           : 'desc'
     }));
   };
-  
+
   const handleQueryClick = (query) => {
     // Store the selected query for details view
     localStorage.setItem('selectedQuery', JSON.stringify(query));
     router.push('/query-details');
   };
-  
+
   // Filter data based on current filters
   const filteredData = profileData ? profileData.filter(query => {
     // Filter by collection
     if (filters.collection && query.collection !== filters.collection) {
       return false;
     }
-    
+
     // Filter by query type
     if (filters.queryType && query.queryType !== filters.queryType) {
       return false;
     }
-    
+
     // Filter by search text
     if (filters.searchText) {
       const searchLower = filters.searchText.toLowerCase();
@@ -260,39 +263,39 @@ export default function DashboardPage() {
         return false;
       }
     }
-    
+
     return true;
   }) : [];
-  
+
   // Sort data based on current sort config
   const sortedData = filteredData ? [...filteredData].sort((a, b) => {
     const key = sortConfig.key;
-    
+
     if (typeof a[key] === 'number' && typeof b[key] === 'number') {
-      return sortConfig.direction === 'asc' 
-        ? a[key] - b[key] 
+      return sortConfig.direction === 'asc'
+        ? a[key] - b[key]
         : b[key] - a[key];
     }
-    
+
     // Handle string comparison
     const valueA = String(a[key] || '');
     const valueB = String(b[key] || '');
-    
+
     return sortConfig.direction === 'asc'
       ? valueA.localeCompare(valueB)
       : valueB.localeCompare(valueA);
   }) : [];
-  
+
   // Extract unique collections for filter dropdown
-  const collections = profileData 
+  const collections = profileData
     ? [...new Set(profileData.map(q => q.collection).filter(Boolean))]
     : [];
-  
+
   // Extract unique query types for filter dropdown
   const queryTypes = profileData
     ? [...new Set(profileData.map(q => q.queryType).filter(Boolean))]
     : [];
-  
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background">
@@ -301,7 +304,7 @@ export default function DashboardPage() {
       </div>
     );
   }
-  
+
   if (error) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
@@ -310,8 +313,8 @@ export default function DashboardPage() {
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="mt-4"
           onClick={() => router.push('/upload')}
         >
@@ -320,7 +323,7 @@ export default function DashboardPage() {
       </div>
     );
   }
-  
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
@@ -331,7 +334,7 @@ export default function DashboardPage() {
             <ChevronRight className="h-4 w-4" />
             <span className="text-foreground font-medium">Dashboard</span>
           </div>
-          
+
           <h1 className="text-3xl font-bold tracking-tight">MongoDB Slow Query Dashboard</h1>
           <p className="text-muted-foreground mt-1">
             Analyze and optimize your MongoDB query performance
@@ -353,7 +356,7 @@ export default function DashboardPage() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card className="overflow-hidden">
             <CardHeader className="pb-2 px-4 py-4">
               <CardTitle className="text-xs font-medium text-muted-foreground">
@@ -367,7 +370,7 @@ export default function DashboardPage() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card className="overflow-hidden">
             <CardHeader className="pb-2 px-4 py-4">
               <CardTitle className="text-xs font-medium text-muted-foreground">
@@ -381,7 +384,7 @@ export default function DashboardPage() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card className="overflow-hidden">
             <CardHeader className="pb-2 px-4 py-4">
               <CardTitle className="text-xs font-medium text-muted-foreground">
@@ -400,10 +403,7 @@ export default function DashboardPage() {
         {/* Filter Controls */}
         <Card className="overflow-hidden mb-6">
           <CardHeader className="px-4 py-4 pb-2">
-            <CardTitle className="text-sm flex items-center">
-              <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
-              Filter Queries
-            </CardTitle>
+            <CardTitle className="text-sm">Filter Queries</CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 pt-0">
             <div className="grid grid-cols-1 gap-3">
@@ -430,7 +430,7 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
-              
+
               {/* Query Type Filter */}
               <div>
                 <div className="text-xs font-medium mb-1.5">Query Types</div>
@@ -454,7 +454,7 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
-              
+
               {/* Search Box */}
               <div className="relative">
                 <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
@@ -467,12 +467,12 @@ export default function DashboardPage() {
                 />
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between mt-3">
               <div className="text-xs text-muted-foreground">
                 Showing {filteredData.length} of {profileData.length} queries
               </div>
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -502,7 +502,7 @@ export default function DashboardPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead 
+                  <TableHead
                     className="cursor-pointer hover:text-primary w-[180px] text-xs"
                     onClick={() => handleSort('collection')}
                   >
@@ -511,7 +511,7 @@ export default function DashboardPage() {
                       <ArrowUpDown className={`ml-1 h-3.5 w-3.5 inline ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />
                     )}
                   </TableHead>
-                  <TableHead 
+                  <TableHead
                     className="cursor-pointer hover:text-primary w-[100px] text-xs"
                     onClick={() => handleSort('queryType')}
                   >
@@ -521,7 +521,7 @@ export default function DashboardPage() {
                     )}
                   </TableHead>
                   <TableHead className="text-xs">Query</TableHead>
-                  <TableHead 
+                  <TableHead
                     className="cursor-pointer hover:text-primary text-right w-[100px] text-xs"
                     onClick={() => handleSort('millis')}
                   >
@@ -541,12 +541,14 @@ export default function DashboardPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  sortedData.slice(0, 25).map((query, index) => (
-                    <TableRow 
-                      key={index}
-                      className={`cursor-pointer text-xs ${(query.millis || 0) > metrics.avgDuration * 2 
-                        ? 'bg-red-50 dark:bg-red-950/10 hover:bg-red-100 dark:hover:bg-red-950/20' 
-                        : 'hover:bg-muted/50'}`}
+                  sortedData.slice(0, displayLimit).map((query, index) => (
+                    <TableRow
+                      key={`query-${query.ts ? query.ts.$date : ''}-${query.collection || ''}-${query.millis || ''}-${index}`}
+                      className={`cursor-pointer text-xs ${(query.millis || 0) > metrics.avgDuration * 2
+                        ? 'dark:bg-red-950/10 hover:bg-red-100 dark:hover:bg-red-950/20 border-l-2 border-l-red-500'
+                        : (query.millis || 0) > metrics.avgDuration
+                          ? 'dark:bg-amber-950/10 hover:bg-amber-100 dark:hover:bg-amber-950/20 border-l-2 border-l-amber-500'
+                          : 'dark:hover:bg-purple-950/10 border-l-2 border-l-purple-200 dark:border-l-purple-800'}`}
                       onClick={() => handleQueryClick(query)}
                     >
                       <TableCell className="font-medium py-2">
@@ -567,9 +569,14 @@ export default function DashboardPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right py-2">
-                        <Badge 
-                          variant={(query.millis || 0) > metrics.avgDuration * 2 ? 'destructive' : 'outline'}
-                          className="text-[10px] py-0 h-5"
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] py-0 h-5 ${(query.millis || 0) > metrics.avgDuration * 2
+                              ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800'
+                              : (query.millis || 0) > metrics.avgDuration
+                                ? 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800'
+                                : 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800'
+                            }`}
                         >
                           {formatDuration(query.millis || 0)}
                         </Badge>
@@ -586,9 +593,22 @@ export default function DashboardPage() {
                   ))
                 )}
               </TableBody>
-              {sortedData.length > 25 && (
+              {sortedData.length > displayLimit && (
                 <TableCaption>
-                  Showing 25 of {sortedData.length} queries. Refine your filters to see more specific results.
+                  <div className="flex justify-between items-center py-2">
+                    <p className="text-muted-foreground">
+                      Showing {displayLimit} of {sortedData.length} queries
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-primary/20 bg-primary/5 hover:bg-primary/10 dark:text-primary-foreground dark:border-primary/30 dark:bg-primary/10 dark:hover:bg-primary/20"
+                      onClick={() => setDisplayLimit(displayLimit + 25)}
+                    >
+                      <span>Show More</span>
+                      <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                    </Button>
+                  </div>
                 </TableCaption>
               )}
             </Table>

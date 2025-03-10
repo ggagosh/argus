@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Database,
   FileText,
   Tag,
   Clock,
   Info,
-  AlertCircle,
+  GitBranch,
 } from "lucide-react";
 import {
   Card,
@@ -37,6 +37,13 @@ const OperationDetails = ({
     );
   }
 
+  const [displayMode, setDisplayMode] = useState("json");
+
+  // Check if the operation contains a MongoDB pipeline
+  const hasPipeline = selectedOperation?.command?.pipeline &&
+    Array.isArray(selectedOperation.command.pipeline) &&
+    selectedOperation.command.pipeline.length > 0;
+
   return (
     <div className="space-y-6">
       <Card>
@@ -58,15 +65,15 @@ const OperationDetails = ({
             {selectedOperation.op === "query" || selectedOperation.op === "find"
               ? "Query operation to retrieve documents from the database"
               : selectedOperation.op === "update"
-              ? "Update operation to modify existing documents"
-              : selectedOperation.op === "insert"
-              ? "Insert operation to add new documents"
-              : selectedOperation.op === "remove" ||
-                selectedOperation.op === "delete"
-              ? "Delete operation to remove documents"
-              : selectedOperation.op === "command"
-              ? "Database command operation"
-              : "MongoDB operation"}
+                ? "Update operation to modify existing documents"
+                : selectedOperation.op === "insert"
+                  ? "Insert operation to add new documents"
+                  : selectedOperation.op === "remove" ||
+                    selectedOperation.op === "delete"
+                    ? "Delete operation to remove documents"
+                    : selectedOperation.op === "command"
+                      ? "Database command operation"
+                      : "MongoDB operation"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -199,18 +206,46 @@ const OperationDetails = ({
                   <FileText className="h-4 w-4" />
                   {selectedOperation.query ? "Query" : "Command"}
                 </h3>
-                <div className="relative">
-                  <ThemeAwareShikiHighlighter
-                    language="json"
-                    delay={150}
-                  >
-                    {JSON.stringify(
-                      selectedOperation.query || selectedOperation.command,
-                      null,
-                      2
-                    )}
-                  </ThemeAwareShikiHighlighter>
-                </div>
+
+                {hasPipeline ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center">
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <GitBranch className="h-3 w-3" />
+                        Aggregation Pipeline
+                      </Badge>
+                      <span className="text-xs text-muted-foreground ml-2">
+                        {selectedOperation.command.pipeline.length} stage{selectedOperation.command.pipeline.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+
+                    <div className="relative">
+                      <ThemeAwareShikiHighlighter
+                        language="json"
+                        delay={150}
+                      >
+                        {JSON.stringify(
+                          selectedOperation.query || selectedOperation.command,
+                          null,
+                          2
+                        )}
+                      </ThemeAwareShikiHighlighter>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <ThemeAwareShikiHighlighter
+                      language="json"
+                      delay={150}
+                    >
+                      {JSON.stringify(
+                        selectedOperation.query || selectedOperation.command,
+                        null,
+                        2
+                      )}
+                    </ThemeAwareShikiHighlighter>
+                  </div>
+                )}
               </div>
             )}
 

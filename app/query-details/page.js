@@ -39,7 +39,9 @@ const formatDate = (dateString) => {
   try {
     if (typeof dateString === 'string') {
       return new Date(dateString).toLocaleString();
-    } else if (dateString.$date) {
+    } 
+    
+    if (dateString.$date) {
       return new Date(dateString.$date).toLocaleString();
     }
     return 'Invalid date';
@@ -75,7 +77,7 @@ function QueryDetailsContent() {
         setIsLoading(false);
       } catch (err) {
         console.error('Error loading query:', err);
-        setError('Failed to load query details: ' + err.message);
+        setError(`Failed to load query details: ${err.message}`);
         setIsLoading(false);
       }
     };
@@ -176,67 +178,57 @@ function QueryDetailsContent() {
           
           <div className="md:col-span-1">
             {/* Sidebar - Performance Metrics Explained */}
-            <Card className="max-w-xs mx-auto md:ml-auto w-full">
-              <CardHeader className="px-4 py-4">
-                <CardTitle className="flex items-center text-sm">
-                  <Info className="h-4 w-4 mr-1.5 text-muted-foreground" />
-                  Performance Metrics
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4 pt-0 text-sm">
-                <div className="space-y-3">
-                  <div>
+            <div className="space-y-3">
+                  <div className="p-2 rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
                     <h4 className="font-medium flex items-center gap-1.5">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      Query Duration
+                      <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <span className="text-blue-800 dark:text-blue-300">Query Duration</span>
                     </h4>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-blue-700 dark:text-blue-300 text-xs opacity-90">
                       The total time taken to execute the query. Values above 100ms are generally considered slow.
                     </p>
                   </div>
                   
-                  <div>
+                  <div className="p-2 rounded-md bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800">
                     <h4 className="font-medium flex items-center gap-1.5">
-                      <Search className="h-4 w-4 text-muted-foreground" />
-                      Documents Examined
+                      <Search className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      <span className="text-purple-800 dark:text-purple-300">Documents Examined</span>
                     </h4>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-purple-700 dark:text-purple-300 text-xs opacity-90">
                       Number of documents MongoDB had to inspect to fulfill the query. Lower numbers indicate better index usage.
                     </p>
                   </div>
                   
-                  <div>
+                  <div className="p-2 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
                     <h4 className="font-medium flex items-center gap-1.5">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      Documents Returned
+                      <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <span className="text-green-800 dark:text-green-300">Documents Returned</span>
                     </h4>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-green-700 dark:text-green-300 text-xs opacity-90">
                       The total number of documents returned by the query.
                     </p>
                   </div>
                   
-                  <div>
+                  <div className="p-2 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800">
                     <h4 className="font-medium flex items-center gap-1.5">
-                      <ScanLine className="h-4 w-4 text-muted-foreground" />
-                      Scan Ratio
+                      <ScanLine className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <span className="text-amber-800 dark:text-amber-300">Scan Ratio</span>
                     </h4>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-amber-700 dark:text-amber-300 text-xs opacity-90">
                       Documents examined divided by documents returned. Lower ratios indicate more efficient queries. Values over 10 suggest optimization opportunities.
                     </p>
                   </div>
                   
-                  <div>
+                  <div className="p-2 rounded-md bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-100 dark:border-cyan-800">
                     <h4 className="font-medium flex items-center gap-1.5">
-                      <Database className="h-4 w-4 text-muted-foreground" />
-                      Index Usage
+                      <Database className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                      <span className="text-cyan-800 dark:text-cyan-300">Index Usage</span>
                     </h4>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-cyan-700 dark:text-cyan-300 text-xs opacity-90">
                       Indicates whether the query used an index. Collection scans (COLLSCAN) mean no suitable index was found and generally perform poorly on large collections.
                     </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </main>
