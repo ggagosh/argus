@@ -62,6 +62,18 @@ export default function DashboardPage() {
     timeRange: 'all'
   });
 
+  // Load saved filters from localStorage on mount
+  useEffect(() => {
+    try {
+      const storedFilters = localStorage.getItem('dashboardFilters');
+      if (storedFilters) {
+        setFilters(JSON.parse(storedFilters));
+      }
+    } catch (e) {
+      console.error('Failed to load saved filters:', e);
+    }
+  }, []);
+
   // Sort state
   const [sortConfig, setSortConfig] = useState({
     key: 'millis',
@@ -226,6 +238,15 @@ export default function DashboardPage() {
       [key]: newValue
     }));
   };
+
+  // Persist filters to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('dashboardFilters', JSON.stringify(filters));
+    } catch (e) {
+      console.error('Failed to save filters:', e);
+    }
+  }, [filters]);
 
   const handleSort = (key) => {
     setSortConfig(prevConfig => ({
