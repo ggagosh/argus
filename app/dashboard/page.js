@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -81,6 +81,9 @@ export default function DashboardPage() {
 
   // Display limit state
   const [displayLimit, setDisplayLimit] = useState(25);
+
+  // Ref for infinite scroll trigger
+  const loaderRef = useRef(null);
 
   // Process data
   useEffect(() => {
@@ -285,6 +288,21 @@ export default function DashboardPage() {
       ? valueA.localeCompare(valueB)
       : valueB.localeCompare(valueA);
   }) : [];
+
+  // Increase display limit when sentinel becomes visible
+  useEffect(() => {
+    const loader = loaderRef.current;
+    if (!loader) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setDisplayLimit((prev) => Math.min(prev + 25, sortedData.length));
+      }
+    });
+
+    observer.observe(loader);
+    return () => observer.disconnect();
+  }, [sortedData.length]);
 
   // Extract unique collections for filter dropdown
   const collections = profileData
@@ -591,7 +609,7 @@ export default function DashboardPage() {
                       </TableCell>
                     </TableRow>
                   ))
-                )}
+              )}
               </TableBody>
               {sortedData.length > displayLimit && (
                 <TableCaption>
@@ -612,9 +630,12 @@ export default function DashboardPage() {
                 </TableCaption>
               )}
             </Table>
+            {sortedData.length > displayLimit && (
+              <div ref={loaderRef} className="h-4" />
+            )}
           </CardContent>
         </Card>
       </main>
     </div>
   );
-} 
+}
