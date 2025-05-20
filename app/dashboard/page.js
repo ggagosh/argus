@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -81,6 +81,12 @@ export default function DashboardPage() {
 
   // Display limit state
   const [displayLimit, setDisplayLimit] = useState(25);
+
+  // Loading more indicator state
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // Ref for infinite scroll trigger
+  const loaderRef = useRef(null);
 
   // Process data
   useEffect(() => {
@@ -285,6 +291,26 @@ export default function DashboardPage() {
       ? valueA.localeCompare(valueB)
       : valueB.localeCompare(valueA);
   }) : [];
+
+  // Increase display limit when sentinel becomes visible
+  useEffect(() => {
+    const loader = loaderRef.current;
+    if (!loader) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      const entry = entries[0];
+      if (entry.isIntersecting && !isLoadingMore) {
+        setIsLoadingMore(true);
+        setTimeout(() => {
+          setDisplayLimit((prev) => Math.min(prev + 25, sortedData.length));
+          setIsLoadingMore(false);
+        }, 300);
+      }
+    });
+
+    observer.observe(loader);
+    return () => observer.disconnect();
+  }, [sortedData.length, isLoadingMore]);
 
   // Extract unique collections for filter dropdown
   const collections = profileData
@@ -544,7 +570,7 @@ export default function DashboardPage() {
                   sortedData.slice(0, displayLimit).map((query, index) => (
                     <TableRow
                       key={`query-${query.ts ? query.ts.$date : ''}-${query.collection || ''}-${query.millis || ''}-${index}`}
-                      className={`cursor-pointer text-xs ${(query.millis || 0) > metrics.avgDuration * 2
+                      className={`cursor-pointer text-xs transition-all animate-in fade-in ${(query.millis || 0) > metrics.avgDuration * 2
                         ? 'dark:bg-red-950/10 hover:bg-red-100 dark:hover:bg-red-950/20 border-l-2 border-l-red-500'
                         : (query.millis || 0) > metrics.avgDuration
                           ? 'dark:bg-amber-950/10 hover:bg-amber-100 dark:hover:bg-amber-950/20 border-l-2 border-l-amber-500'
@@ -591,7 +617,7 @@ export default function DashboardPage() {
                       </TableCell>
                     </TableRow>
                   ))
-                )}
+              )}
               </TableBody>
               {sortedData.length > displayLimit && (
                 <TableCaption>
@@ -603,7 +629,13 @@ export default function DashboardPage() {
                       variant="outline"
                       size="sm"
                       className="border-primary/20 bg-primary/5 hover:bg-primary/10 dark:text-primary-foreground dark:border-primary/30 dark:bg-primary/10 dark:hover:bg-primary/20"
-                      onClick={() => setDisplayLimit(displayLimit + 25)}
+                      onClick={() => {
+                        setIsLoadingMore(true);
+                        setTimeout(() => {
+                          setDisplayLimit((prev) => Math.min(prev + 25, sortedData.length));
+                          setIsLoadingMore(false);
+                        }, 300);
+                      }}
                     >
                       <span>Show More</span>
                       <ChevronRight className="h-3.5 w-3.5 ml-1" />
@@ -612,9 +644,17 @@ export default function DashboardPage() {
                 </TableCaption>
               )}
             </Table>
+            {sortedData.length > displayLimit && (
+              <div
+                ref={loaderRef}
+                className="flex flex-col items-center h-10 justify-center"
+              >
+                {isLoadingMore && <LoadingSpinner />}
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>
     </div>
   );
-} 
+}
