@@ -55,9 +55,10 @@ export default function DashboardPage() {
   const [error, setError] = useState(null);
 
   // Filter state
+  // Allow selecting multiple collections and query types simultaneously
   const [filters, setFilters] = useState({
-    collection: null,
-    queryType: null,
+    collection: [],
+    queryType: [],
     searchText: '',
     timeRange: 'all'
   });
@@ -230,13 +231,24 @@ export default function DashboardPage() {
   };
 
   const handleFilterChange = (key, value) => {
-    // Toggle logic - if clicking the same value, clear it
-    const newValue = filters[key] === value ? null : value;
-
-    setFilters(prevFilters => ({
-      ...prevFilters,
-      [key]: newValue
-    }));
+    // Support multi-select for collection and query type filters
+    if (key === 'collection' || key === 'queryType') {
+      setFilters(prevFilters => {
+        const currentValues = prevFilters[key] || [];
+        const exists = currentValues.includes(value);
+        return {
+          ...prevFilters,
+          [key]: exists
+            ? currentValues.filter(v => v !== value)
+            : [...currentValues, value]
+        };
+      });
+    } else {
+      setFilters(prevFilters => ({
+        ...prevFilters,
+        [key]: value
+      }));
+    }
   };
 
   // Persist filters to localStorage whenever they change
@@ -266,13 +278,13 @@ export default function DashboardPage() {
 
   // Filter data based on current filters
   const filteredData = profileData ? profileData.filter(query => {
-    // Filter by collection
-    if (filters.collection && query.collection !== filters.collection) {
+    // Filter by collection (support multiple selections)
+    if (filters.collection.length > 0 && !filters.collection.includes(query.collection)) {
       return false;
     }
 
-    // Filter by query type
-    if (filters.queryType && query.queryType !== filters.queryType) {
+    // Filter by query type (support multiple selections)
+    if (filters.queryType.length > 0 && !filters.queryType.includes(query.queryType)) {
       return false;
     }
 
@@ -437,7 +449,7 @@ export default function DashboardPage() {
                       {collections.map(collection => (
                         <Button
                           key={collection}
-                          variant={filters.collection === collection ? "default" : "outline"}
+                          variant={filters.collection.includes(collection) ? "default" : "outline"}
                           size="sm"
                           className="text-xs py-1 h-7"
                           onClick={() => handleFilterChange('collection', collection)}
@@ -461,7 +473,7 @@ export default function DashboardPage() {
                       {queryTypes.map(type => (
                         <Button
                           key={type}
-                          variant={filters.queryType === type ? "default" : "outline"}
+                          variant={filters.queryType.includes(type) ? "default" : "outline"}
                           size="sm"
                           className="text-xs py-1 h-7"
                           onClick={() => handleFilterChange('queryType', type)}
@@ -499,8 +511,8 @@ export default function DashboardPage() {
                 size="sm"
                 className="text-xs h-7"
                 onClick={() => setFilters({
-                  collection: null,
-                  queryType: null,
+                  collection: [],
+                  queryType: [],
                   searchText: '',
                   timeRange: 'all'
                 })}
