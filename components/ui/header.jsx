@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Github } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
+import { Button } from './button';
 
 export function Header() {
   return (
@@ -29,6 +30,9 @@ export function Header() {
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <Button variant="ghost" asChild>
+              <Link href="/about">About</Link>
+            </Button>
             <a
               href="https://github.com/ggagosh/argus"
               target="_blank"
