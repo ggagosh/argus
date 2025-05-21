@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   Database,
   FileText,
@@ -6,6 +6,8 @@ import {
   Clock,
   Info,
   GitBranch,
+  Copy,
+  Check,
 } from "lucide-react";
 import {
   Card,
@@ -38,6 +40,52 @@ const OperationDetails = ({
   }
 
   const [displayMode, setDisplayMode] = useState("json");
+  const [queryCopied, setQueryCopied] = useState(false);
+  const [rawDataCopied, setRawDataCopied] = useState(false);
+  
+  // Function to copy query to clipboard
+  const copyQueryToClipboard = useCallback(async () => {
+    try {
+      // Get the query or command object
+      const queryData = selectedOperation.query || selectedOperation.command;
+      // Convert to formatted JSON
+      const formattedQuery = JSON.stringify(queryData, null, 2);
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(formattedQuery);
+      
+      // Show success state
+      setQueryCopied(true);
+      
+      // Reset copy state after 2 seconds
+      setTimeout(() => {
+        setQueryCopied(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Failed to copy query:", error);
+    }
+  }, [selectedOperation]);
+  
+  // Function to copy raw operation data to clipboard
+  const copyRawDataToClipboard = useCallback(async () => {
+    try {
+      // Convert the entire operation to formatted JSON
+      const formattedData = JSON.stringify(selectedOperation, null, 2);
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(formattedData);
+      
+      // Show success state
+      setRawDataCopied(true);
+      
+      // Reset copy state after 2 seconds
+      setTimeout(() => {
+        setRawDataCopied(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Failed to copy raw operation data:", error);
+    }
+  }, [selectedOperation]);
 
   // Check if the operation contains a MongoDB pipeline
   const hasPipeline = selectedOperation?.command?.pipeline &&
@@ -202,10 +250,31 @@ const OperationDetails = ({
             {/* Query */}
             {(selectedOperation.query || selectedOperation.command) && (
               <div>
-                <h3 className="text-sm font-medium mb-2 flex items-center gap-1">
-                  <FileText className="h-4 w-4" />
-                  {selectedOperation.query ? "Query" : "Command"}
-                </h3>
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-sm font-medium flex items-center gap-1">
+                    <FileText className="h-4 w-4" />
+                    {selectedOperation.query ? "Query" : "Command"}
+                  </h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 flex items-center gap-1"
+                    onClick={copyQueryToClipboard}
+                    title="Copy query for T3 Studio"
+                  >
+                    {queryCopied ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-green-500" />
+                        <span className="text-xs">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5" />
+                        <span className="text-xs">Copy query</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
 
                 {hasPipeline ? (
                   <div className="space-y-3">
@@ -251,16 +320,28 @@ const OperationDetails = ({
 
             {/* Raw Operation Data */}
             <div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const el = document.getElementById("raw-operation-data");
-                  if (el) el.classList.toggle("hidden");
-                }}
-              >
-                Show Raw Operation Data
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const el = document.getElementById("raw-operation-data");
+                    if (el) el.classList.toggle("hidden");
+                  }}
+                >
+                  Show Raw Operation Data
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1"
+                  onClick={copyRawDataToClipboard}
+                  title="Copy raw operation data"
+                >
+                  {rawDataCopied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  <span className="text-xs">{rawDataCopied ? "Copied!" : "Copy Raw Data"}</span>
+                </Button>
+              </div>
               <div
                 id="raw-operation-data"
                 className="hidden mt-2"
