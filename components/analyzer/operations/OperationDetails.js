@@ -6,6 +6,9 @@ import {
   Clock,
   Info,
   GitBranch,
+  ClipboardCopy,
+  Check,
+  AlertTriangle,
 } from "lucide-react";
 import {
   Card,
@@ -38,11 +41,34 @@ const OperationDetails = ({
   }
 
   const [displayMode, setDisplayMode] = useState("json");
-
-  // Check if the operation contains a MongoDB pipeline
+  const [copyButtonText, setCopyButtonText] = useState("Copy Query");
+  const [isCopying, setIsCopying] = useState(false);
   const hasPipeline = selectedOperation?.command?.pipeline &&
     Array.isArray(selectedOperation.command.pipeline) &&
     selectedOperation.command.pipeline.length > 0;
+
+  const handleCopy = async () => {
+    if (!selectedOperation.query && !selectedOperation.command) return;
+    setIsCopying(true);
+    const queryString = JSON.stringify(
+      selectedOperation.query || selectedOperation.command,
+      null,
+      2
+    );
+
+    try {
+      await navigator.clipboard.writeText(queryString);
+      setCopyButtonText("Copied!");
+    } catch (err) {
+      console.error("Failed to copy query: ", err);
+      setCopyButtonText("Copy Failed");
+    } finally {
+      setTimeout(() => {
+        setCopyButtonText("Copy Query");
+        setIsCopying(false);
+      }, 2000);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -249,8 +275,71 @@ const OperationDetails = ({
               </div>
             )}
 
-            {/* Raw Operation Data */}
-            <div>
+            {/* Query */}
+            {(selectedOperation.query || selectedOperation.command) && (
+              <div>
+                <h3 className="text-sm font-medium mb-2 flex items-center gap-1">
+                  <FileText className="h-4 w-4" />
+                  {selectedOperation.query ? "Query" : "Command"}
+                </h3>
+
+                {hasPipeline ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center">
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <GitBranch className="h-3 w-3" />
+                        Aggregation Pipeline
+                      </Badge>
+                      <span className="text-xs text-muted-foreground ml-2">
+                        {selectedOperation.command.pipeline.length} stage{selectedOperation.command.pipeline.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+
+                    <div className="relative">
+                      <ThemeAwareShikiHighlighter
+                        language="json"
+                        delay={150}
+                      >
+                        {JSON.stringify(
+                          selectedOperation.query || selectedOperation.command,
+                          null,
+                          2
+                        )}
+                      </ThemeAwareShikiHighlighter>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <ThemeAwareShikiHighlighter
+                      language="json"
+                      delay={150}
+                    >
+                      {JSON.stringify(
+                        selectedOperation.query || selectedOperation.command,
+                        null,
+                        2
+                      )}
+                    </ThemeAwareShikiHighlighter>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Action Buttons */}
+            <div className="flex space-x-2 mt-4">
+              {(selectedOperation.query || selectedOperation.command) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopy}
+                  disabled={isCopying}
+                >
+                  {copyButtonText === "Copy Query" && <ClipboardCopy className="h-4 w-4 mr-2" />}
+                  {copyButtonText === "Copied!" && <Check className="h-4 w-4 mr-2 text-green-500" />}
+                  {copyButtonText === "Copy Failed" && <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />}
+                  {copyButtonText}
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -261,6 +350,9 @@ const OperationDetails = ({
               >
                 Show Raw Operation Data
               </Button>
+            </div>
+            {/* Raw Operation Data */}
+            <div>
               <div
                 id="raw-operation-data"
                 className="hidden mt-2"
