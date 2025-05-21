@@ -6,6 +6,8 @@ import {
   Clock,
   Info,
   GitBranch,
+  Copy,
+  Check,
 } from "lucide-react";
 import {
   Card,
@@ -37,7 +39,25 @@ const OperationDetails = ({
     );
   }
 
-  const [displayMode, setDisplayMode] = useState("json");
+const [displayMode, setDisplayMode] = useState("json");
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyQuery = async () => {
+    try {
+      await navigator.clipboard.writeText(
+        JSON.stringify(
+          selectedOperation.query || selectedOperation.command,
+          null,
+          2
+        )
+      );
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy query:", err);
+    }
+  };
 
   // Check if the operation contains a MongoDB pipeline
   const hasPipeline = selectedOperation?.command?.pipeline &&
@@ -202,10 +222,25 @@ const OperationDetails = ({
             {/* Query */}
             {(selectedOperation.query || selectedOperation.command) && (
               <div>
-                <h3 className="text-sm font-medium mb-2 flex items-center gap-1">
-                  <FileText className="h-4 w-4" />
-                  {selectedOperation.query ? "Query" : "Command"}
-                </h3>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium flex items-center gap-1">
+                    <FileText className="h-4 w-4" />
+                    {selectedOperation.query ? "Query" : "Command"}
+                  </h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyQuery}
+                    className="flex items-center gap-1"
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                    {copied ? "Copied" : "Copy Query"}
+                  </Button>
+                </div>
 
                 {hasPipeline ? (
                   <div className="space-y-3">
