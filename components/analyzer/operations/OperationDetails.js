@@ -6,6 +6,8 @@ import {
   Clock,
   Info,
   GitBranch,
+  Copy,
+  Check,
 } from "lucide-react";
 import {
   Card,
@@ -38,6 +40,103 @@ const OperationDetails = ({
   }
 
   const [displayMode, setDisplayMode] = useState("json");
+  const [copied, setCopied] = useState(false);
+
+  // Generate markdown for LLM consumption
+  const generateMarkdown = () => {
+    const op = selectedOperation;
+    const problems = [];
+
+    // Identify problems
+    const scanRatio = op.docsExamined / Math.max(1, op.nreturned || 1);
+
+    if (op.planSummary?.includes("COLLSCAN")) {
+      problems.push({
+        severity: "critical",
+        title: "Collection Scan (COLLSCAN)",
+        description: `MongoDB is scanning the entire collection instead of using an index. This is inefficient for large collections.`
+      });
+    }
+
+    if (scanRatio > 10) {
+      problems.push({
+        severity: "critical",
+        title: "High Scan Ratio",
+        description: `Scan ratio is ${scanRatio.toFixed(1)}:1 - MongoDB examined ${op.docsExamined?.toLocaleString()} documents to return ${op.nreturned?.toLocaleString()} results. This indicates missing or inefficient indexes.`
+      });
+    } else if (scanRatio > 3) {
+      problems.push({
+        severity: "warning",
+        title: "Moderate Scan Ratio",
+        description: `Scan ratio is ${scanRatio.toFixed(1)}:1 - Could be improved with better indexes.`
+      });
+    }
+
+    if (op.millis > 100) {
+      problems.push({
+        severity: "critical",
+        title: "Slow Query",
+        description: `Query took ${op.millis}ms to execute, which is above the 100ms threshold.`
+      });
+    } else if (op.millis > 50) {
+      problems.push({
+        severity: "warning",
+        title: "Moderate Query Duration",
+        description: `Query took ${op.millis}ms to execute.`
+      });
+    }
+
+    if (op.planSummary?.includes("SORT") && !op.planSummary?.includes("IXSCAN")) {
+      problems.push({
+        severity: "warning",
+        title: "In-Memory Sort",
+        description: "Query is performing an in-memory sort which can be expensive for large result sets."
+      });
+    }
+
+    let markdown = `# MongoDB Query Analysis
+
+## Operation Overview
+- **Namespace:** ${op.ns || "Unknown"}
+- **Operation Type:** ${op.op || "Unknown"}
+- **Duration:** ${op.millis}ms
+- **Timestamp:** ${op.ts?.$date ? new Date(op.ts.$date).toISOString() : op.ts || "Unknown"}
+
+## Performance Metrics
+- **Documents Examined:** ${op.docsExamined?.toLocaleString() || "N/A"}
+- **Documents Returned:** ${op.nreturned?.toLocaleString() || "N/A"}
+- **Keys Examined:** ${op.keysExamined?.toLocaleString() || "N/A"}
+- **Scan Ratio:** ${scanRatio.toFixed(1)}:1
+- **Plan Summary:** ${op.planSummary || "N/A"}
+`;
+
+    if (problems.length > 0) {
+      markdown += `\n## Identified Problems\n`;
+      problems.forEach((problem, i) => {
+        const icon = problem.severity === "critical" ? "🔴" : "🟡";
+        markdown += `\n### ${icon} ${problem.title}\n${problem.description}\n`;
+      });
+    } else {
+      markdown += `\n## Status\n✅ No significant performance issues identified.\n`;
+    }
+
+    markdown += `\n## Query/Command\n\`\`\`json\n${JSON.stringify(op.query || op.command, null, 2)}\n\`\`\`\n`;
+
+    markdown += `\n## Full Operation Data\n\`\`\`json\n${JSON.stringify(op, null, 2)}\n\`\`\`\n`;
+
+    return markdown;
+  };
+
+  const copyAsMarkdown = async () => {
+    try {
+      const markdown = generateMarkdown();
+      await navigator.clipboard.writeText(markdown);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
 
   // Check if the operation contains a MongoDB pipeline
   const hasPipeline = selectedOperation?.command?.pipeline &&
@@ -53,13 +152,33 @@ const OperationDetails = ({
               <Database className="h-5 w-5 text-primary" />
               {selectedOperation.ns || "Unknown Collection"}
             </div>
-            <Badge
-              size="lg"
-              variant="secondary"
-              className="text-base px-3 py-1"
-            >
-              {formatTime(selectedOperation.millis || 0)}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={copyAsMarkdown}
+                className="flex items-center gap-1.5"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-4 w-4 text-green-600" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" />
+                    Copy as Markdown
+                  </>
+                )}
+              </Button>
+              <Badge
+                size="lg"
+                variant="secondary"
+                className="text-base px-3 py-1"
+              >
+                {formatTime(selectedOperation.millis || 0)}
+              </Badge>
+            </div>
           </CardTitle>
           <CardDescription>
             {selectedOperation.op === "query" || selectedOperation.op === "find"
